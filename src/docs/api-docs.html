@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Documentation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container py-4">
+      <h1 class="h3 mb-4">API Documentation</h1>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <span class="badge bg-success me-2">GET</span> /products
+        </div>
+        <div class="card-body">
+          <p class="small">Obtiene todos los productos disponibles.</p>
+          <div class="small">
+            <strong>Respuestas:</strong>
+            <code>200</code> Lista de productos encontrada, <code>204</code> No
+            hay productos disponibles
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <span class="badge bg-success me-2">GET</span> /products/{id}
+        </div>
+        <div class="card-body">
+          <p class="small">Obtiene un producto específico por su ID.</p>
+          <div class="small mb-2">
+            <strong>Parámetros:</strong> <code>id</code> (path)
+          </div>
+          <div class="small">
+            <strong>Respuestas:</strong>
+            <code>200</code> Producto encontrado, <code>204</code> Producto no
+            encontrado
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <span class="badge bg-primary me-2">POST</span> /products
+        </div>
+        <div class="card-body">
+          <p class="small">Crea un nuevo producto.</p>
+          <pre
+            class="small bg-light p-2 mb-2"
+          ><code>{ "name": "string", "price": "number" }</code></pre>
+          <div class="small">
+            <strong>Respuestas:</strong>
+            <code>201</code> Creado, <code>400</code> Error
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <span class="badge bg-warning me-2">PUT</span> /products/{id}
+        </div>
+        <div class="card-body">
+          <p class="small">Actualiza un producto existente.</p>
+          <div class="small mb-2">
+            <strong>Parámetros:</strong> <code>id</code> (path)
+          </div>
+          <pre
+            class="small bg-light p-2 mb-2"
+          ><code>{ "name": "string (opcional)", "price": "number (opcional)" }</code></pre>
+          <div class="small">
+            <strong>Respuestas:</strong>
+            <code>200</code> Actualizado, <code>204</code> No encontrado,
+            <code>400</code> Error
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <span class="badge bg-danger me-2">DELETE</span> /products/{id}
+        </div>
+        <div class="card-body">
+          <p class="small">Elimina un producto existente.</p>
+          <div class="small mb-2">
+            <strong>Parámetros:</strong> <code>id</code> (path)
+          </div>
+          <div class="small">
+            <strong>Respuestas:</strong>
+            <code>200</code> Eliminado, <code>204</code> No encontrado,
+            <code>400</code> Error
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

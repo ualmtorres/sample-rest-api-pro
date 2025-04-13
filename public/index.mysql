@@ -1,0 +1,306 @@
+<?php
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(__DIR__) . '/db.php';
+
+
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Slim\Factory\AppFactory;
+
+// Crear la aplicación
+$app = AppFactory::create();
+
+// Configurar la ruta base
+$app->setBasePath('/' . basename(dirname(__DIR__)));
+
+// Configurar Slim para procesar datos JSON
+$app->addBodyParsingMiddleware();
+
+// Helper function to handle the response
+function createJsonResponse(ResponseInterface $response, array $data): ResponseInterface {
+    // Set the response content type
+    $response = $response->withHeader('Content-Type', 'application/json; charset=utf-8');
+
+    // Write the response
+    $response->getBody()->write(json_encode($data));
+
+    // Return the response
+    return $response;
+}
+
+$host = 'localhost';
+$dbname = 'sample_api';
+$username = 'root';
+$password = '';
+
+$mysqli = new mysqli($host, $username, $password, $dbname);
+
+if ($mysqli->connect_error) {
+    die('Connection failed: ' . $mysqli->connect_error);
+}
+
+// Ruta para obtener todos los productos
+$app->get('/product', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $mysqli;
+
+    // Consulta para obtener todos los productos
+    $query = 'SELECT * FROM product';
+    $stmt = $mysqli->prepare($query);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    // Comprobar si hay productos
+    if ($result->num_rows > 0) {
+        $products = [];
+        while ($row = $result->fetch_assoc()) {
+            $products[] = $row;
+        }
+
+        // Establecer los datos de la respuesta
+        $data = [
+            'status' => 200,
+            'result' => $products
+        ];
+    } else {
+        // Establecer los datos de la respuesta
+        $data = [
+            'status' => 204,
+            'message' => 'No products found'
+        ];
+    }
+
+    // Devolver la respuesta utilizando la función auxiliar
+    return createJsonResponse($response, $data);
+});
+
+// Ruta para obtener un producto por ID
+$app->get('/product/{id}', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $mysqli;
+
+    // Obtener el ID del producto
+    $productId = $args['id'];
+
+    // Consulta para obtener un producto por ID
+    $query = "SELECT * FROM product WHERE id = ?";
+    $stmt = $mysqli->prepare($query);
+    $stmt->bind_param('i', $productId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    // Comprobar si hay un producto
+    if ($result->num_rows > 0) {
+        $product = $result->fetch_assoc();
+
+        // Establecer los datos de la respuesta
+        $data = [
+            'status' => 200,
+            'result' => $product
+        ];
+    } else {
+        // Establecer los datos de la respuesta
+        $data = [
+            'status' => 204,
+            'message' => 'Product not found'
+        ];
+    }
+
+    // Devolver la respuesta utilizando la función auxiliar
+    return createJsonResponse($response, $data);
+});
+
+// Ruta para crear un nuevo producto
+$app->post('/product', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $mysqli;
+
+    // Obtener el cuerpo de la solicitud
+    $body = $request->getParsedBody();
+
+    // Crear un nuevo producto
+    $name = $body['name'];
+    $price = $body['price'];
+    $createdAt = date('Y-m-d H:i:s');
+    $updatedAt = date('Y-m-d H:i:s');
+
+    // Consulta para crear un nuevo producto
+    $query = "INSERT INTO product (name, price, created_at, updated_at) VALUES (?, ?, ?, ?)";
+    $stmt = $mysqli->prepare($query);
+    $stmt->bind_param('sdss', $name, $price, $createdAt, $updatedAt);
+    $result = $stmt->execute();
+
+    // Comprobar si se ha creado el producto
+    if ($result) {
+        // Obtener el ID del producto creado
+        $productId = $mysqli->insert_id;
+
+        // Consulta para obtener el producto creado
+        $query = "SELECT * FROM product WHERE id = ?";
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param('i', $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        // Comprobar si se ha obtenido el producto
+        if ($result->num_rows > 0) {
+            $product = $result->fetch_assoc();
+
+            // Establecer los datos de la respuesta
+            $data = [
+                'status' => 201,
+                'message' => 'Product created successfully',
+                'result' => $product
+            ];
+        } else {
+            // Establecer los datos de la respuesta
+            $data = [
+                'status' => 204,
+                'message' => 'Product not found'
+            ];
+        }
+    } else {
+        // Establecer los datos de la respuesta
+        $data = [
+            'status' => 400,
+            'message' => 'Error creating product'
+        ];
+    }
+
+    // Devolver la respuesta utilizando la función auxiliar
+    return createJsonResponse($response, $data);
+});
+
+// Ruta para actualizar un producto
+$app->put('/product/{id}', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $mysqli;
+
+    // Obtener el ID del producto
+    $productId = $args['id'];
+
+    // Obtener el cuerpo de la solicitud
+    $body = $request->getParsedBody();
+
+    // Comprobar si el producto existe
+    $query = "SELECT * FROM product WHERE id = ?";
+    $stmt = $mysqli->prepare($query);
+    $stmt->bind_param('i', $productId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        // Actualizar el producto
+
+        // Asignar $name y $price si existen, de lo contrario asignar NULL
+        $name = isset($body['name']) ? $body['name'] : NULL; 
+        $price = isset($body['price']) ? $body['price'] : NULL; 
+
+        $updatedAt = date('Y-m-d H:i:s');
+
+        // Update the product. COALESCE is used to keep the existing value if the new value is NULL  
+        $query = "UPDATE product SET name = COALESCE(?, name), price = COALESCE(?, price), updated_at = ? WHERE id = ?";   
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param('sdsi', $name, $price, $updatedAt, $productId);
+        $result = $stmt->execute();
+
+        // Comprobar si se ha actualizado el producto
+        if ($result) {
+            // Consulta para obtener el producto actualizado
+            $query = "SELECT * FROM product WHERE id = ?";
+            $stmt = $mysqli->prepare($query);
+            $stmt->bind_param('i', $productId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            // Comprobar si se ha obtenido el producto
+            if ($result->num_rows > 0) {
+                $product = $result->fetch_assoc();
+
+                // Establecer los datos de la respuesta
+                $data = [
+                    'status' => 200,
+                    'message' => 'Product updated successfully',
+                    'result' => $product
+                ];
+            } else {
+                // Establecer los datos de la respuesta
+                $data = [
+                    'status' => 204,
+                    'message' => 'Product not found'
+                ];
+            }
+        } else {
+            // Establecer los datos de la respuesta
+            $data = [
+                'status' => 400,
+                'message' => 'Error updating product'
+            ];
+        }
+    } else {
+        // Establecer los datos de la respuesta
+        $data = [
+            'status' => 204,
+            'message' => 'Product not found'
+        ];
+    }
+
+    // Devolver la respuesta utilizando la función auxiliar
+    return createJsonResponse($response, $data);
+});
+
+// Ruta para eliminar un producto
+$app->delete('/product/{id}', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $mysqli;
+
+    // Obtener el ID del producto
+    $productId = $args['id'];
+
+    // Comprobar si el producto existe
+    $query = "SELECT * FROM product WHERE id = ?";
+    $stmt = $mysqli->prepare($query);
+    $stmt->bind_param('i', $productId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        // Eliminar el producto
+        $query = "DELETE FROM product WHERE id = ?";
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param('i', $productId);
+        $result = $stmt->execute();
+
+        // Comprobar si se ha eliminado el producto
+        if ($result) {
+            // Establecer los datos de la respuesta
+            $data = [
+                'status' => 200,
+                'message' => 'Product deleted successfully'
+            ];
+        } else {
+            // Establecer los datos de la respuesta
+            $data = [
+                'status' => 400,
+                'message' => 'Error deleting product'
+            ];
+        }
+    } else {
+        // Establecer los datos de la respuesta
+        $data = [
+            'status' => 204,
+            'message' => 'Product not found'
+        ];
+    }
+
+    // Devolver la respuesta utilizando la función auxiliar
+    return createJsonResponse($response, $data);
+});
+
+// Interceptar todas las rutas no definidas 
+$app->any('{routes:.+}', function (RequestInterface $request, ResponseInterface $response) {
+    $data = [
+        'status' => 404,
+        'message' => 'Route not found'
+    ];
+    return createJsonResponse($response->withStatus(404), $data);
+});
+
+// Ejecutar la aplicación
+$app->run();

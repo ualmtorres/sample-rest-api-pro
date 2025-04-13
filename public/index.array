@@ -1,0 +1,228 @@
+<?php
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Slim\Factory\AppFactory;
+
+// Create the application
+$app = AppFactory::create();
+
+// Set the base path
+$app->setBasePath('/' . basename(dirname(__DIR__)));
+
+// Setup Slim to process JSON data  
+$app->addBodyParsingMiddleware();   
+
+// Helper function to handle the response
+function createJsonResponse(ResponseInterface $response, array $data): ResponseInterface {
+    // Set the response content type
+    $response = $response->withHeader('Content-Type', 'application/json; charset=utf-8');
+
+    // Write the response
+    $response->getBody()->write(json_encode($data));
+
+    // Return the response
+    return $response;
+}
+
+// Define global products array
+$products = [
+    ['id' => 1, 'name' => 'Product 1'],
+    ['id' => 2, 'name' => 'Product 2'],
+    ['id' => 3, 'name' => 'Product 3']
+];
+
+// Define the application routes
+
+// Sample route to return a message  - http://localhost/sample-rest-api/    
+$app->get('/', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    // Set the response data
+    $data = [
+        'status' => 200,
+        'message' => 'Hello from Slim'
+    ];
+
+    // Return the response using the helper function
+    return createJsonResponse($response, $data);
+});
+
+// Sample route to return a list of products or filter products by name - http://localhost/sample-rest-api/product
+$app->get('/product', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $products;
+
+    // Get the query parameters
+    $queryParams = $request->getQueryParams();
+
+    if (isset($queryParams['name'])) {
+        // Get the product name
+        $productName = $queryParams['name'];
+
+        // Find the product by name
+        $product = array_filter($products, function ($product) use ($productName) {
+            return $product['name'] == $productName;
+        });
+
+        // Set the response data
+        $data = [
+            'status' => 200,
+            'result' => array_shift($product)
+        ];
+    } else {
+        // Set the response data
+        $data = [
+            'status' => 200,
+            'result' => $products
+        ];
+    }
+
+    // Return the response using the helper function
+    return createJsonResponse($response, $data);
+});
+
+// Sample route to return a product - http://localhost/sample-rest-api/product/1
+$app->get('/product/{id}', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $products;
+
+    // Get the product ID
+    $productId = $args['id'];
+
+    // Find the product by ID
+    $product = array_filter($products, function ($product) use ($productId) {
+        return $product['id'] == $productId;
+    });
+
+    // Set the response data
+    $data = [
+        'status' => 200,
+        'result' => array_shift($product)
+    ];
+
+    // Return the response using the helper function
+    return createJsonResponse($response, $data);
+});
+
+// Sample route to create a product - http://localhost/sample-rest-api/product
+$app->post('/product', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $products;
+
+    // Get the request body
+    $body = $request->getParsedBody();
+
+    // Create a new product
+    $newProduct = [
+        'id' => count($products) + 1,
+        'name' => $body['name']
+    ];
+
+    // Add the new product to the products array
+    $products[] = $newProduct;
+
+    // Set the response data
+    // WARNING: Products are returned for demonstration purposes. In a real-world application, you should not return all products after creating a new product.
+    $data = [
+        'status' => 201,
+        'message' => 'Product created successfully',
+        'result' => $newProduct,
+        'products' => $products
+    ];
+
+    // Return the response using the helper function
+    return createJsonResponse($response, $data);
+});
+
+// Sample route to update a product - http://localhost/sample-rest-api/product/1
+$app->put('/product/{id}', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $products;
+
+    // Get the product ID
+    $productId = $args['id'];
+
+    // Get the request body
+    $body = $request->getParsedBody();
+
+    // Find the product by ID
+    $product = array_filter($products, function ($product) use ($productId) {
+        return $product['id'] == $productId;
+    });
+
+    // Check if the product exists
+    if (empty($product)) {
+        // Set the response data
+        $data = [
+            'status' => 204,
+            'message' => 'Product not found'
+        ];
+    }
+    else {
+        // Update the product
+        $product = array_shift($product);
+        $product['name'] = $body['name'];
+        $products[$productId - 1] = $product;
+
+        // Set the response data
+        // WARNING: Products are returned for demonstration purposes. In a real-world application, you should not return all products after updating a product.
+        $data = [
+            'status' => 200,
+            'message' => 'Product updated successfully',
+            'result' => $product,
+            'products' => $products
+        ];
+    }
+
+    // Return the response using the helper function
+    return createJsonResponse($response, $data);
+}); 
+
+// Sample route to delete a product - http://localhost/sample-rest-api/product/1
+$app->delete('/product/{id}', function (RequestInterface $request, ResponseInterface $response, array $args) {
+    global $products;
+
+    // Get the product ID
+    $productId = $args['id'];
+
+    // Find the product by ID
+    $product = array_filter($products, function ($product) use ($productId) {
+        return $product['id'] == $productId;
+    });
+
+    // Check if the product exists
+    if (empty($product)) {
+        // Set the response data
+        $data = [
+            'status' => 204,
+            'message' => 'Product not found'
+        ];
+    }
+    else {
+        // Delete the product
+        $product = array_shift($product);
+        unset($products[$productId - 1]);
+
+        // Set the response data
+        // WARNING: Products are returned for demonstration purposes. In a real-world application, you should not return all products after deleting a product.
+        $data = [
+            'status' => 200,
+            'message' => 'Product deleted successfully',
+            'result' => $product,
+            'products' => $products
+        ];
+    }
+
+    // Return the response using the helper function
+    return createJsonResponse($response, $data);
+});
+
+// Interceptar todas las rutas no definidas 
+$app->any('{routes:.+}', function (RequestInterface $request, ResponseInterface $response) {
+    $data = [
+        'status' => 404,
+        'message' => 'Route not found'
+    ];
+    return createJsonResponse($response->withStatus(404), $data);
+});
+
+
+// Run the application
+$app->run();
