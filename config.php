@@ -1,9 +1,9 @@
 <?php
 
 $config = [
-    'host' => 'localhost',
-    'username' => 'root',
-    'password' => '',
+    'host' => 'mysql',
+    'username' => 'example',
+    'password' => 'example',
     'database' => 'sample_api'
 ];
 
