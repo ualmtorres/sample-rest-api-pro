@@ -1,19 +1,26 @@
 <?php
 
 require dirname(__DIR__) . '/vendor/autoload.php';
-require dirname(__DIR__) . '/db.php';
 
 use Slim\Factory\AppFactory;
+use Dotenv\Dotenv;
+use App\Infrastructure\Routes\ProductRoutes;
+use App\Infrastructure\Routes\GeneralRoutes;
+
+// Cargar variables de entorno
+$dotenv = Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->load();
 
 // Crear la aplicación
 $app = AppFactory::create();
 
-// Configurar Slim para procesar datos JSON
+// Configurar Slim para procesar datos JSON y errores
 $app->addBodyParsingMiddleware();
+$app->addErrorMiddleware(true, true, true);
 
-// Cargar las rutas desde un archivo separado
-require dirname(__DIR__) . '/src/routes/productRoutes.php';
-require dirname(__DIR__) . '/src/routes/generalRoutes.php';
+// Configurar las rutas usando las clases
+ProductRoutes::setup($app);
+GeneralRoutes::setup($app);
 
 // Ejecutar la aplicación
 $app->run();
