@@ -1,23 +1,30 @@
 version: "3.8"
 
 services:
+  init-sql:
+    image: alpine:latest
+    volumes:
+      - ./init:/init
+    env_file:
+      - .env
+    entrypoint: ["/bin/sh", "/init/prepare-sql.sh"]
   php:
     container_name: slim_php
     build:
       dockerfile: ./docker/php/Dockerfile
     ports:
-      - "9000:9000"
+      - "${PHP_PORT}:9000"
     volumes:
-      - .:/var/www/slim_app
+      - ${APP_PATH}:/var/www/slim_app
     command: sh -c "cd /var/www/slim_app && composer install && php-fpm"
 
   nginx:
     container_name: slim_nginx
     image: nginx:stable-alpine
     ports:
-      - "80:80"
+      - "${NGINX_PORT}:80"
     volumes:
-      - .:/var/www/slim_app
+      - ${APP_PATH}:/var/www/slim_app
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - php
@@ -25,15 +32,18 @@ services:
   mysql:
     image: mysql:latest
     environment:
-      MYSQL_ROOT_PASSWORD: example
-      MYSQL_USER: example
-      MYSQL_PASSWORD: example
-      MYSQL_DATABASE: sample_api
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./sample_api.sql:/docker-entrypoint-initdb.d/sample_api.sql
+      - ./init/sample_api.sql:/docker-entrypoint-initdb.d/sample_api.sql
+    depends_on:
+      init-sql:
+        condition: service_completed_successfully
 
 volumes:
   mysql_data:

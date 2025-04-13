@@ -1,12 +1,16 @@
 <?php
 
-require 'config.php';
+use Dotenv\Dotenv;
+
+// Cargar las variables de entorno
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 // Configuración de la base de datos
-$host = $config['host'];
-$username = $config['username'];
-$password = $config['password'];
-$database = $config['database'];
+$host = $_ENV['MYSQL_HOST'];
+$username = $_ENV['MYSQL_USER'];
+$password = $_ENV['MYSQL_PASSWORD'];
+$database = $_ENV['MYSQL_DATABASE'];
 
 // Conexión a la base de datos
 $mysqli = new mysqli($host, $username, $password, $database);
