@@ -29,3 +29,52 @@ GRANT ALL PRIVILEGES ON auth_api.* TO 'example'@'%';
 GRANT ALL PRIVILEGES ON sample_api_test.* TO 'example'@'%';
 GRANT ALL PRIVILEGES ON auth_api_test.* TO 'example'@'%';
 FLUSH PRIVILEGES;
+
+-- Crear tabla de usuarios
+CREATE TABLE IF NOT EXISTS auth_api.users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Crear tabla de roles
+CREATE TABLE IF NOT EXISTS auth_api.roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Crear tabla pivot usuarios-roles
+CREATE TABLE IF NOT EXISTS auth_api.user_roles (
+    user_id INT NOT NULL,
+    role_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES auth_api.users(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES auth_api.roles(id) ON DELETE CASCADE
+);
+
+-- Crear tabla de tokens de refresco
+CREATE TABLE IF NOT EXISTS auth_api.refresh_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES auth_api.users(id) ON DELETE CASCADE
+);
+
+-- Insertar roles básicos
+INSERT IGNORE INTO auth_api.roles (name, description) VALUES
+    ('admin', 'Administrador del sistema'),
+    ('user', 'Usuario normal');
+
+-- Crear índices
+CREATE INDEX idx_users_username ON auth_api.users(username);
+CREATE INDEX idx_users_email ON auth_api.users(email);
+CREATE INDEX idx_refresh_tokens_token ON auth_api.refresh_tokens(token);

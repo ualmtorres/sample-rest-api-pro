@@ -6,6 +6,7 @@ use Slim\Factory\AppFactory;
 use Dotenv\Dotenv;
 use App\Infrastructure\Routes\ProductRoutes;
 use App\Infrastructure\Routes\GeneralRoutes;
+use App\Infrastructure\Routes\AuthRoutes;
 
 // Cargar variables de entorno
 $dotenv = Dotenv::createImmutable(dirname(__DIR__));
@@ -19,6 +20,7 @@ $app->addBodyParsingMiddleware();
 $app->addErrorMiddleware(true, true, true);
 
 // Configurar las rutas usando las clases
+AuthRoutes::setup($app);
 ProductRoutes::setup($app);
 GeneralRoutes::setup($app);
 
