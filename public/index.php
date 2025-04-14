@@ -2,24 +2,19 @@
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Slim\Factory\AppFactory;
 use Dotenv\Dotenv;
-use App\Infrastructure\Routes\ProductRoutes;
-use App\Infrastructure\Routes\GeneralRoutes;
-use App\Infrastructure\Routes\AuthRoutes;
+use App\Infrastructure\Bootstrap\Bootstrap;
+use App\Infrastructure\Routes\{AuthRoutes, ProductRoutes, GeneralRoutes};
 
 // Cargar variables de entorno
 $dotenv = Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->load();
 
-// Crear la aplicación
-$app = AppFactory::create();
+// Inicializar la aplicación
+$bootstrap = new Bootstrap();
+$app = $bootstrap->getApp();
 
-// Configurar Slim para procesar datos JSON y errores
-$app->addBodyParsingMiddleware();
-$app->addErrorMiddleware(true, true, true);
-
-// Configurar las rutas usando las clases
+// Configurar las rutas
 AuthRoutes::setup($app);
 ProductRoutes::setup($app);
 GeneralRoutes::setup($app);

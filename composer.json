@@ -20,7 +20,8 @@
     "nyholm/psr7-server": "^1.1",
     "laminas/laminas-diactoros": "^3.3",
     "vlucas/phpdotenv": "^5.6",
-    "firebase/php-jwt": "^6.11"
+    "firebase/php-jwt": "^6.11",
+    "php-di/php-di": "^7.0"
   },
   "scripts": {
     "server": "php -S localhost:8000 -t public"

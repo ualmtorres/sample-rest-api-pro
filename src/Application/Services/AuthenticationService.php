@@ -8,15 +8,18 @@ use App\Domain\Entities\User;
 
 class AuthenticationService
 {
-    private $userRepository;
+    private UserRepositoryInterface $userRepository;
     private string $jwtSecret;
     private int $jwtExpiration;
 
-    public function __construct(UserRepositoryInterface $userRepository)
-    {
+    public function __construct(
+        UserRepositoryInterface $userRepository,
+        ?string $jwtSecret = null,
+        ?int $jwtExpiration = null
+    ) {
         $this->userRepository = $userRepository;
-        $this->jwtSecret = $_ENV['JWT_SECRET'];
-        $this->jwtExpiration = 3600; // 1 hora
+        $this->jwtSecret = $jwtSecret ?? $_ENV['JWT_SECRET'];
+        $this->jwtExpiration = $jwtExpiration ?? 3600;
     }
 
     public function register(string $username, string $email, string $password): User
