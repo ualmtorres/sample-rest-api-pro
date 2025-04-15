@@ -5,6 +5,7 @@ namespace App\Infrastructure\Bootstrap;
 use DI\ContainerBuilder;
 use Slim\App;
 use Slim\Factory\AppFactory;
+use App\Infrastructure\Middleware\RequestLoggerMiddleware;
 
 class Bootstrap
 {
@@ -30,6 +31,7 @@ class Bootstrap
     {
         $this->app->addBodyParsingMiddleware();
         $this->app->addErrorMiddleware(true, true, true);
+        $this->app->add(new RequestLoggerMiddleware());
     }
 
     public function getApp(): App

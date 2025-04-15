@@ -7,6 +7,8 @@ use App\Infrastructure\Repositories\MySQLProductRepository;
 use App\Application\Services\AuthenticationService;
 use App\Infrastructure\Controllers\ProductController;
 use App\Infrastructure\Controllers\AuthController;
+use App\Infrastructure\Services\MonologLoggerService;
+use App\Application\Services\LoggerServiceInterface;
 
 return [
     'db_connection' => function () {
@@ -29,11 +31,21 @@ return [
         );
     },
 
+    'logger' => function (ContainerInterface $c) {
+        return new MonologLoggerService('api');
+    },
+
     'auth_controller' => function (ContainerInterface $c) {
-        return new AuthController($c->get('auth_service'));
+        return new AuthController(
+            $c->get('auth_service'),
+            $c->get('logger')
+        );
     },
 
     'product_controller' => function (ContainerInterface $c) {
-        return new ProductController($c->get('product_repository'));
+        return new ProductController(
+            $c->get('product_repository'),
+            $c->get('logger')
+        );
     },
 ];
